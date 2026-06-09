@@ -1,0 +1,33 @@
+# frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sweetadmin-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sweetadmin-frontend
+  template:
+    metadata:
+      labels:
+        app: sweetadmin-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: sweetadmin-frontend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sweetadmin-frontend-svc
+spec:
+  selector:
+    app: sweetadmin-frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort
