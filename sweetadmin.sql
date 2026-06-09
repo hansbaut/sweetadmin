@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-06-2026 a las 06:38:17
+-- Tiempo de generación: 09-06-2026 a las 08:30:34
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -101,7 +101,17 @@ CREATE TABLE `pedidos` (
 --
 
 INSERT INTO `pedidos` (`id`, `total`, `estado`, `activo`, `fecha`, `clienteId`) VALUES
-(1, 0.00, 'pendiente', 0, '2026-06-07 22:54:08.586848', 1);
+(1, 0.00, 'pendiente', 0, '2026-06-07 22:54:08.586848', 1),
+(2, 45.50, 'entregado', 1, '2026-06-01 09:00:00.000000', 2),
+(3, 150.00, 'entregado', 1, '2026-06-02 10:30:00.000000', 3),
+(4, 28.00, 'entregado', 1, '2026-06-03 11:00:00.000000', 4),
+(5, 75.00, 'entregado', 1, '2026-06-04 09:30:00.000000', 2),
+(6, 22.00, 'entregado', 1, '2026-06-05 14:00:00.000000', 5),
+(7, 350.00, 'entregado', 1, '2026-06-06 10:00:00.000000', 3),
+(8, 36.50, 'listo', 1, '2026-06-07 08:00:00.000000', 4),
+(9, 62.00, 'en_proceso', 1, '2026-06-08 11:30:00.000000', 2),
+(10, 18.50, 'pendiente', 1, '2026-06-09 09:00:00.000000', 5),
+(11, 45.00, 'pendiente', 1, '2026-06-09 10:00:00.000000', 3);
 
 -- --------------------------------------------------------
 
@@ -158,7 +168,12 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `email`, `password`, `rol`, `fuerza_password`, `activo`, `created_at`) VALUES
-(1, 'Mamá Admin', 'admin@sweetadmin.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'fuerte', 1, '2026-06-07 15:20:20.310899');
+(1, 'Mamá Admin', 'admin@sweetadmin.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'fuerte', 1, '2026-06-07 15:20:20.310899'),
+(2, 'Carlos Mamani', 'carlos@sweetadmin.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'empleado', 'fuerte', 1, '2026-06-09 02:23:35.570282'),
+(3, 'Ana Quispe', 'ana@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'cliente', 'intermedio', 1, '2026-06-09 02:23:35.570282'),
+(4, 'Pedro Flores', 'pedro@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'cliente', 'fuerte', 1, '2026-06-09 02:23:35.570282'),
+(5, 'Maria Condori', 'maria@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'cliente', 'debil', 1, '2026-06-09 02:23:35.570282'),
+(6, 'Juan Huanca', 'juan@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'cliente', 'fuerte', 1, '2026-06-09 02:23:35.570282');
 
 --
 -- Índices para tablas volcadas
@@ -218,7 +233,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `productos`
@@ -230,7 +245,7 @@ ALTER TABLE `productos`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas
