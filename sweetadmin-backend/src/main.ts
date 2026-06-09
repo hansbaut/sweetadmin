@@ -10,6 +10,7 @@ async function bootstrap() {
       'http://localhost:80',     // Docker alternativo
       'http://localhost:5173',   // Vite desarrollo
       'http://localhost:3000',   // Por si acaso
+      'https://sweetadmin-maria-frontend.onrender.com',  // Producción
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
