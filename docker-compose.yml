@@ -1,12 +1,21 @@
 version: '3.8'
+
 services:
   db:
     image: mysql:8
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sweetadmin
     ports:
-      - "3306:3306"
+      - "3307:3306" 
+    volumes:
+      - mysql_data:/var/lib/mysql   # ← datos persistentes
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./sweetadmin-backend
@@ -21,11 +30,19 @@ services:
       JWT_SECRET: sweetadmin_secret_2025
       RECAPTCHA_SECRET: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
     depends_on:
-      - db
+      db:
+        condition: service_healthy   # ← espera que MySQL esté listo
+    restart: on-failure
 
   frontend:
     build: ./sweetadmin-frontend
     ports:
       - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000   # ← URL del backend
     depends_on:
       - backend
+    restart: on-failure
+
+volumes:
+  mysql_data:   # ← volumen nombrado para persistencia
