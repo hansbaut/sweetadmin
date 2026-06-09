@@ -16,6 +16,7 @@ export default function Navbar() {
     { path: '/productos', label: '🍰 Productos' },
     { path: '/pedidos', label: '📦 Pedidos' },
     { path: '/reportes', label: '📄 Reportes' },
+    { path: '/logs', label: '🔍 Logs' },
   ]
 
   return (
