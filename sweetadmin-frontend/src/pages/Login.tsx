@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import ReCAPTCHA from 'react-google-recaptcha'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -9,19 +10,28 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
   const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    const captchaToken = recaptchaRef.current?.getValue()
+    if (!captchaToken) {
+      setError('Por favor completa el CAPTCHA')
+      return
+    }
+
     setLoading(true)
     try {
-      const res = await api.post('/auth/login', { email, password })
+      const res = await api.post('/auth/login', { email, password, captchaToken })
       login(res.data.access_token, res.data.usuario)
       navigate('/dashboard')
     } catch {
       setError('Credenciales incorrectas. Intenta de nuevo.')
+      recaptchaRef.current?.reset()
     } finally {
       setLoading(false)
     }
@@ -79,6 +89,13 @@ export default function Login() {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+          </div>
+
+          <div className="flex justify-center">
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            />
           </div>
 
           <button

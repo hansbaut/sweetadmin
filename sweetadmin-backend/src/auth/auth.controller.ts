@@ -8,10 +8,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  login(@Body() body: { email: string; password: string }, @Req() req: any) {
+  login(
+    @Body() body: { email: string; password: string; captchaToken: string },
+    @Req() req: any
+  ) {
     const ip = req.ip;
     const browser = req.headers['user-agent'];
-    return this.authService.login(body.email, body.password, ip, browser);
+    return this.authService.login(body.email, body.password, ip, browser, body.captchaToken);
   }
 
   @Post('registro')

@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { AccessLogService } from '../access-log/access-log.service';
 import * as bcrypt from 'bcrypt';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -12,14 +13,28 @@ export class AuthService {
     private accessLogService: AccessLogService,
   ) {}
 
-  async login(email: string, password: string, ip?: string, browser?: string) {
+  async verificarCaptcha(token: string): Promise<boolean> {
+    const secret = process.env.RECAPTCHA_SECRET;
+    const res = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      { params: { secret, response: token } }
+    );
+    return res.data.success;
+  }
+
+  async login(email: string, password: string, ip?: string, browser?: string, captchaToken?: string) {
+    if (!captchaToken) throw new BadRequestException('CAPTCHA requerido');
+
+    const captchaValido = await this.verificarCaptcha(captchaToken);
+    if (!captchaValido) throw new BadRequestException('CAPTCHA inválido');
+
     const usuario = await this.usersService.findByEmail(email);
     if (!usuario) throw new UnauthorizedException('Credenciales incorrectas');
 
     const passwordValido = await bcrypt.compare(password, usuario.password);
     if (!passwordValido) throw new UnauthorizedException('Credenciales incorrectas');
 
-    // Registrar ingreso automáticamente
     await this.accessLogService.registrar({
       usuarioId: usuario.id,
       ip,
