@@ -11,13 +11,20 @@ export default function Navbar() {
     navigate('/login')
   }
 
-  const links = [
-    { path: '/dashboard', label: '📊 Dashboard' },
-    { path: '/productos', label: '🍰 Productos' },
-    { path: '/pedidos', label: '📦 Pedidos' },
-    { path: '/reportes', label: '📄 Reportes' },
-    { path: '/logs', label: '🔍 Logs' },
+  // Links según rol
+  const todosLosLinks = [
+    { path: '/dashboard', label: '📊 Dashboard',  roles: ['admin', 'empleado', 'cliente'] },
+    { path: '/productos', label: '🍰 Productos',  roles: ['admin', 'empleado'] },
+    { path: '/pedidos',   label: '📦 Pedidos',    roles: ['admin', 'empleado', 'cliente'] },
+    { path: '/reportes',  label: '📄 Reportes',   roles: ['admin'] },
+    { path: '/logs',      label: '🔍 Logs',       roles: ['admin'] },
+    { path: '/usuarios',  label: '👥 Usuarios',   roles: ['admin'] },
   ]
+
+  // Filtrar según el rol del usuario actual
+  const links = todosLosLinks.filter(link =>
+    user?.rol && link.roles.includes(user.rol)
+  )
 
   return (
     <nav className="bg-blue-800 text-white shadow-lg">
@@ -29,7 +36,7 @@ export default function Navbar() {
           <span className="font-bold text-lg">SweetAdmin</span>
         </div>
 
-        {/* Links */}
+        {/* Links filtrados por rol */}
         <div className="flex gap-2">
           {links.map(link => (
             <button

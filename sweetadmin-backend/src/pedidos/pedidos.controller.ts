@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { PedidosService } from './pedidos.service';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { PedidosService, CrearPedidoDto } from './pedidos.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('pedidos')
@@ -8,7 +8,9 @@ export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
   @Get()
-  listar() { return this.pedidosService.listar(); }
+  listar() {
+    return this.pedidosService.listar();
+  }
 
   @Get(':id')
   obtener(@Param('id') id: string) {
@@ -16,8 +18,12 @@ export class PedidosController {
   }
 
   @Post()
-  crear(@Body() body: { clienteId: number }) {
-    return this.pedidosService.crear(body.clienteId);
+  crear(@Body() body: CrearPedidoDto, @Request() req: any) {
+    // Si el que crea es un cliente registrado, asignar su ID automáticamente
+    if (req.user.rol === 'cliente') {
+      body.clienteId = req.user.id;
+    }
+    return this.pedidosService.crear(body);
   }
 
   @Put(':id/estado')
