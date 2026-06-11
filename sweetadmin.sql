@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-06-2026 a las 08:30:34
+-- Tiempo de generación: 11-06-2026 a las 07:45:47
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -58,7 +58,8 @@ INSERT INTO `access_log` (`id`, `ip`, `evento`, `browser`, `fecha_hora`, `usuari
 (15, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-07 21:12:06.281350', 1),
 (16, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-07 22:53:50.401665', 1),
 (17, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-08 22:38:15.569951', 1),
-(18, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-08 23:47:45.057757', 1);
+(18, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-08 23:47:45.057757', 1),
+(19, '::1', 'ingreso', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '2026-06-09 08:16:47.562757', 1);
 
 -- --------------------------------------------------------
 
@@ -93,25 +94,47 @@ CREATE TABLE `pedidos` (
   `estado` enum('pendiente','en_proceso','listo','entregado','cancelado') NOT NULL DEFAULT 'pendiente',
   `activo` tinyint(4) NOT NULL DEFAULT 1,
   `fecha` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `clienteId` int(11) DEFAULT NULL
+  `clienteId` int(11) DEFAULT NULL,
+  `clienteNombre` varchar(100) DEFAULT NULL,
+  `clienteTelefono` varchar(20) DEFAULT NULL,
+  `subtotal` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `descuento` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `porcentajeDescuento` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `anticipo` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `tipoEntrega` enum('presencial','delivery') NOT NULL DEFAULT 'presencial'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `pedidos`
 --
 
-INSERT INTO `pedidos` (`id`, `total`, `estado`, `activo`, `fecha`, `clienteId`) VALUES
-(1, 0.00, 'pendiente', 0, '2026-06-07 22:54:08.586848', 1),
-(2, 45.50, 'entregado', 1, '2026-06-01 09:00:00.000000', 2),
-(3, 150.00, 'entregado', 1, '2026-06-02 10:30:00.000000', 3),
-(4, 28.00, 'entregado', 1, '2026-06-03 11:00:00.000000', 4),
-(5, 75.00, 'entregado', 1, '2026-06-04 09:30:00.000000', 2),
-(6, 22.00, 'entregado', 1, '2026-06-05 14:00:00.000000', 5),
-(7, 350.00, 'entregado', 1, '2026-06-06 10:00:00.000000', 3),
-(8, 36.50, 'listo', 1, '2026-06-07 08:00:00.000000', 4),
-(9, 62.00, 'en_proceso', 1, '2026-06-08 11:30:00.000000', 2),
-(10, 18.50, 'pendiente', 1, '2026-06-09 09:00:00.000000', 5),
-(11, 45.00, 'pendiente', 1, '2026-06-09 10:00:00.000000', 3);
+INSERT INTO `pedidos` (`id`, `total`, `estado`, `activo`, `fecha`, `clienteId`, `clienteNombre`, `clienteTelefono`, `subtotal`, `descuento`, `porcentajeDescuento`, `anticipo`, `tipoEntrega`) VALUES
+(1, 0.00, 'pendiente', 0, '2026-06-07 22:54:08.586848', 1, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(2, 45.50, 'entregado', 1, '2026-06-01 09:00:00.000000', 2, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(3, 150.00, 'entregado', 1, '2026-06-02 10:30:00.000000', 3, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(4, 28.00, 'entregado', 1, '2026-06-03 11:00:00.000000', 4, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(5, 75.00, 'entregado', 1, '2026-06-04 09:30:00.000000', 2, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(6, 22.00, 'entregado', 1, '2026-06-05 14:00:00.000000', 5, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(7, 350.00, 'entregado', 1, '2026-06-06 10:00:00.000000', 3, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(8, 36.50, 'listo', 1, '2026-06-07 08:00:00.000000', 4, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(9, 62.00, 'en_proceso', 1, '2026-06-08 11:30:00.000000', 2, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(10, 18.50, 'pendiente', 1, '2026-06-09 09:00:00.000000', 5, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial'),
+(11, 45.00, 'pendiente', 1, '2026-06-09 10:00:00.000000', 3, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 'presencial');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pedido_detalle`
+--
+
+CREATE TABLE `pedido_detalle` (
+  `id` int(11) NOT NULL,
+  `pedidoId` int(11) NOT NULL,
+  `productoId` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `precioUnitario` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -200,6 +223,14 @@ ALTER TABLE `pedidos`
   ADD KEY `FK_485346a40b61bb8ae3a98f5400c` (`clienteId`);
 
 --
+-- Indices de la tabla `pedido_detalle`
+--
+ALTER TABLE `pedido_detalle`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `FK_988889c23b636b393a69dde5604` (`pedidoId`),
+  ADD KEY `FK_0d8a0b25faa67e0fdb671a179f5` (`productoId`);
+
+--
 -- Indices de la tabla `productos`
 --
 ALTER TABLE `productos`
@@ -221,7 +252,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `access_log`
 --
 ALTER TABLE `access_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `categorias`
@@ -234,6 +265,12 @@ ALTER TABLE `categorias`
 --
 ALTER TABLE `pedidos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT de la tabla `pedido_detalle`
+--
+ALTER TABLE `pedido_detalle`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `productos`
@@ -262,6 +299,13 @@ ALTER TABLE `access_log`
 --
 ALTER TABLE `pedidos`
   ADD CONSTRAINT `FK_485346a40b61bb8ae3a98f5400c` FOREIGN KEY (`clienteId`) REFERENCES `usuarios` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+--
+-- Filtros para la tabla `pedido_detalle`
+--
+ALTER TABLE `pedido_detalle`
+  ADD CONSTRAINT `FK_0d8a0b25faa67e0fdb671a179f5` FOREIGN KEY (`productoId`) REFERENCES `productos` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `FK_988889c23b636b393a69dde5604` FOREIGN KEY (`pedidoId`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
 -- Filtros para la tabla `productos`
