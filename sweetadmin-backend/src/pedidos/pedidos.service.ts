@@ -10,8 +10,8 @@ import { Producto } from '../productos/producto.entity';
 const DESCUENTOS = [
   { minimo: 500, porcentaje: 15 },
   { minimo: 200, porcentaje: 10 },
-  { minimo: 100, porcentaje: 5  },
-  { minimo: 0,   porcentaje: 0  },
+  { minimo: 100, porcentaje: 5 },
+  { minimo: 0, porcentaje: 0 },
 ];
 
 function calcularDescuento(subtotal: number, esUsuarioRegistrado: boolean): number {
@@ -60,66 +60,66 @@ export class PedidosService {
 
   // ─── Crear pedido con productos ───────────────────────────────────────────
   async crear(dto: CrearPedidoDto) {
-    if (!dto.detalles || dto.detalles.length === 0) {
+    if (!dto.detalles || dto.detalles.length === 0)
       throw new BadRequestException('El pedido debe tener al menos un producto');
-    }
-    if (!dto.clienteId && !dto.clienteNombre) {
+    if (!dto.clienteId && !dto.clienteNombre)
       throw new BadRequestException('Debe indicar el cliente');
-    }
 
-    // 1. Construir detalles y calcular subtotal
-    let subtotal = 0;
-    const detalles: PedidoDetalle[] = [];
+    return await this.pedidoRepo.manager.transaction(async (manager) => {
+      const productoRepo  = manager.getRepository(Producto);
+      const pedidoRepo    = manager.getRepository(Pedido);
+      const detalleRepo   = manager.getRepository(PedidoDetalle);
 
-    for (const item of dto.detalles) {
-      const producto = await this.productoRepo.findOne({
-        where: { id: item.productoId, activo: true },
-      });
-      if (!producto) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-      if (producto.stock < item.cantidad) {
-        throw new BadRequestException(`Stock insuficiente para "${producto.nombre}"`);
+      let subtotal = 0;
+      const detalles: PedidoDetalle[] = [];
+
+      for (const item of dto.detalles) {
+        const producto = await productoRepo.findOne({
+          where: { id: item.productoId, activo: true },
+        });
+        if (!producto)
+          throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+        if (producto.stock < item.cantidad)
+          throw new BadRequestException(`Stock insuficiente para "${producto.nombre}"`);
+
+        const precioUnitario = Number(producto.precio);
+        const itemSubtotal = precioUnitario * item.cantidad;
+        subtotal += itemSubtotal;
+
+        const detalle = detalleRepo.create({
+          productoId:     item.productoId,
+          cantidad:       item.cantidad,
+          precioUnitario,
+          subtotal:       itemSubtotal,
+        });
+        detalles.push(detalle);
+
+        await productoRepo.update(item.productoId, {
+          stock: producto.stock - item.cantidad,
+        });
       }
 
-      const precioUnitario = Number(producto.precio);
-      const itemSubtotal = precioUnitario * item.cantidad;
-      subtotal += itemSubtotal;
+      const esRegistrado       = !!dto.clienteId;
+      const porcentajeDescuento = calcularDescuento(subtotal, esRegistrado);
+      const descuento           = (subtotal * porcentajeDescuento) / 100;
+      const total               = subtotal - descuento;
+      const anticipo            = dto.tipoEntrega === 'delivery' ? total * 0.5 : 0;
 
-      const detalle = this.detalleRepo.create({
-        productoId: item.productoId,
-        cantidad: item.cantidad,
-        precioUnitario,
-        subtotal: itemSubtotal,
-      });
-      detalles.push(detalle);
+      const pedido = pedidoRepo.create({
+        clienteId:        dto.clienteId        ?? undefined,
+        clienteNombre:    dto.clienteNombre    ?? undefined,
+        clienteTelefono:  dto.clienteTelefono  ?? undefined,
+        tipoEntrega:        dto.tipoEntrega,
+        subtotal,
+        porcentajeDescuento,
+        descuento,
+        total,
+        anticipo,
+        detalles,
+      } as Partial<Pedido>);
 
-      // Descontar stock
-      await this.productoRepo.update(item.productoId, {
-        stock: producto.stock - item.cantidad,
-      });
-    }
-
-    // 2. Calcular descuento (solo usuarios registrados)
-    const esRegistrado = !!dto.clienteId;
-    const porcentajeDescuento = calcularDescuento(subtotal, esRegistrado);
-    const descuento = (subtotal * porcentajeDescuento) / 100;
-    const total = subtotal - descuento;
-    const anticipo = dto.tipoEntrega === 'delivery' ? total * 0.5 : 0;
-
-    // 3. Crear el pedido
-    const pedido = this.pedidoRepo.create({
-      clienteId: dto.clienteId ?? null,
-      clienteNombre: dto.clienteNombre ?? null,
-      clienteTelefono: dto.clienteTelefono ?? null,
-      tipoEntrega: dto.tipoEntrega,
-      subtotal,
-      porcentajeDescuento,
-      descuento,
-      total,
-      anticipo,
-      detalles,
+      return pedidoRepo.save(pedido);
     });
-
-    return this.pedidoRepo.save(pedido);
   }
 
   // ─── Cambiar estado ───────────────────────────────────────────────────────
