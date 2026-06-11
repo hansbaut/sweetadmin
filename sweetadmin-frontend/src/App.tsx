@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -34,55 +35,72 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {isAuthenticated && <Navbar />}
-      <Routes>
 
-        {/* Pública */}
+      {/* ─── Toaster global — aparece en toda la app ─── */}
+      <Toaster
+        position="top-right"
+        gutter={10}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '500',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+            padding: '12px 16px',
+            maxWidth: '380px',
+          },
+          success: {
+            iconTheme: { primary: '#10b981', secondary: '#fff' },
+            style: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' },
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' },
+          },
+        }}
+      />
+
+      {isAuthenticated && <Navbar />}
+
+      <Routes>
         <Route path="/login" element={<Login />} />
 
-        {/* Todos los roles autenticados */}
         <Route path="/dashboard" element={
           <PrivateRoute><Dashboard /></PrivateRoute>
         } />
 
-        {/* Admin y Empleado: CRUD productos */}
         <Route path="/productos" element={
           <RoleRoute roles={['admin', 'empleado']}>
             <Productos />
           </RoleRoute>
         } />
 
-        {/* Admin, Empleado y Cliente: ver y crear pedidos */}
         <Route path="/pedidos" element={
           <PrivateRoute><Pedidos /></PrivateRoute>
         } />
 
-        {/* Solo Admin: reportes PDF */}
         <Route path="/reportes" element={
           <RoleRoute roles={['admin']}>
             <Reportes />
           </RoleRoute>
         } />
 
-        {/* Solo Admin: logs de acceso */}
         <Route path="/logs" element={
           <RoleRoute roles={['admin']}>
             <Logs />
           </RoleRoute>
         } />
 
-        {/* Solo Admin: gestión de usuarios */}
         <Route path="/usuarios" element={
           <RoleRoute roles={['admin']}>
             <Usuarios />
           </RoleRoute>
         } />
 
-        {/* Ruta por defecto */}
         <Route path="*" element={
           <Navigate to={isAuthenticated ? "/dashboard" : "/login"} />
         } />
-
       </Routes>
     </div>
   )

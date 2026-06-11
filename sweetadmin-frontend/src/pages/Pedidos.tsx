@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -179,8 +180,22 @@ export default function Pedidos() {
   const agregarAlCarrito = () => {
     const prod = productos.find(p => p.id === +productoSel)
     if (!prod) return
+
     const cantActual = carrito.find(i => i.productoId === prod.id)?.cantidad ?? 0
-    if (cantidad < 1 || cantActual + cantidad > prod.stock) return
+    const disponible = prod.stock - cantActual
+
+    if (cantidad < 1) {
+      toast.error('La cantidad debe ser al menos 1')
+      return
+    }
+    if (disponible <= 0) {
+      toast.error(`Sin stock disponible para "${prod.nombre}"`)
+      return
+    }
+    if (cantidad > disponible) {
+      toast.error(`Solo quedan ${disponible} unidades de "${prod.nombre}"`)
+      return
+    }
 
     const existe = carrito.find(i => i.productoId === prod.id)
     if (existe) {
@@ -197,6 +212,15 @@ export default function Pedidos() {
         subtotal: prod.precio * cantidad,
       }])
     }
+
+    if (prod.stock - cantidad <= 5) {
+      toast('⚠️ Stock bajo: quedan ' + (prod.stock - cantidad) + ' unidades de "' + prod.nombre + '"', {
+        style: { background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' },
+        icon: '📦',
+        duration: 5000,
+      })
+    }
+
     setProductoSel('')
     setCantidad(1)
   }
@@ -215,13 +239,19 @@ export default function Pedidos() {
 
   // ─── Crear pedido ─────────────────────────────────────────────────────────
   const guardarPedido = async () => {
-    if (carrito.length === 0) return alert('Agrega al menos un producto')
-
+    if (carrito.length === 0) {
+      toast.error('Agrega al menos un producto al pedido')
+      return
+    }
     if (!esCliente) {
-      if (tipoCliente === 'presencial' && !clienteNombre.trim())
-        return alert('Ingresa el nombre del cliente presencial')
-      if (tipoCliente === 'registrado' && !clienteIdSel)
-        return alert('Selecciona un cliente registrado')
+      if (tipoCliente === 'presencial' && !clienteNombre.trim()) {
+        toast.error('Ingresa el nombre del cliente presencial')
+        return
+      }
+      if (tipoCliente === 'registrado' && !clienteIdSel) {
+        toast.error('Selecciona un cliente registrado')
+        return
+      }
     }
 
     setSaving(true)
@@ -241,13 +271,12 @@ export default function Pedidos() {
       }
 
       await api.post('/pedidos', body)
-      setExito('✅ Pedido registrado correctamente')
+      toast.success('Pedido registrado correctamente')
       setShowModal(false)
       cargar()
-      setTimeout(() => setExito(''), 4000)
     } catch (err: any) {
       const msg = err.response?.data?.message
-      alert(Array.isArray(msg) ? msg.join('\n') : msg || 'Error al crear pedido')
+      toast.error(Array.isArray(msg) ? msg.join(' · ') : msg || 'Error al crear pedido')
     } finally {
       setSaving(false)
     }
@@ -261,9 +290,8 @@ export default function Pedidos() {
   const handleEliminar = async (id: number) => {
     if (!confirm('¿Cancelar este pedido? Se restaurará el stock.')) return
     await api.delete(`/pedidos/${id}`)
-    setExito('Pedido cancelado — stock restaurado')
+    toast.success('Pedido cancelado — stock restaurado')
     cargar()
-    setTimeout(() => setExito(''), 3000)
   }
 
   const nombreCliente = (p: Pedido) =>
@@ -286,13 +314,6 @@ export default function Pedidos() {
           <span className="text-base">＋</span> Nuevo Pedido
         </button>
       </div>
-
-      {/* Notificación de éxito */}
-      {exito && (
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-4 text-sm font-medium">
-          {exito}
-        </div>
-      )}
 
       {/* Tabla de pedidos */}
       {loading ? (
@@ -615,21 +636,23 @@ export default function Pedidos() {
                   {!esCliente ? '3 · Productos' : '2 · Productos'}
                 </h3>
 
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-2 mb-2">
                   <select
                     value={productoSel}
-                    onChange={e => setProductoSel(e.target.value)}
+                    onChange={e => { setProductoSel(e.target.value); setCantidad(1) }}
                     className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition"
                   >
                     <option value="">Seleccionar producto...</option>
                     {productos.filter(p => p.stock > 0).map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.nombre} · Bs. {Number(p.precio).toFixed(2)} · stock: {p.stock}
+                        {p.nombre} · Bs. {Number(p.precio).toFixed(2)} · {p.stock <= 5 ? `⚠️ solo ${p.stock}` : `stock: ${p.stock}`}
                       </option>
                     ))}
                   </select>
                   <input
-                    type="number" min={1} value={cantidad}
+                    type="number" min={1}
+                    max={productos.find(p => p.id === +productoSel)?.stock ?? 99}
+                    value={cantidad}
                     onChange={e => setCantidad(Math.max(1, +e.target.value))}
                     className="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
@@ -641,6 +664,33 @@ export default function Pedidos() {
                     Agregar
                   </button>
                 </div>
+
+                {/* Indicador de stock del producto seleccionado */}
+                {productoSel && (() => {
+                  const prod = productos.find(p => p.id === +productoSel)
+                  const cantActual = carrito.find(i => i.productoId === +productoSel)?.cantidad ?? 0
+                  const disponible = (prod?.stock ?? 0) - cantActual
+                  if (!prod) return null
+                  return (
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-3 ${
+                      disponible <= 0
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : disponible <= 5
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      <span>{disponible <= 0 ? '🚫' : disponible <= 5 ? '⚠️' : '📦'}</span>
+                      <span>
+                        {disponible <= 0
+                          ? `Sin stock disponible para "${prod.nombre}"`
+                          : cantActual > 0
+                          ? `Disponible: ${disponible} unidades (${cantActual} ya en carrito)`
+                          : `Disponible: ${disponible} unidades`
+                        }
+                      </span>
+                    </div>
+                  )
+                })()}
 
                 {/* Carrito vacío */}
                 {carrito.length === 0 && (
