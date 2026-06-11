@@ -3,18 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pedido } from '../pedidos/pedido.entity';
 import { Producto } from '../productos/producto.entity';
-import PdfPrinter from 'pdfmake';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
-
-// Fuentes base incluidas en pdfmake (no requieren archivos externos)
-const fonts = {
-  Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
-  },
-};
 
 @Injectable()
 export class ReportesService {
@@ -36,22 +24,40 @@ export class ReportesService {
     const totalGeneral = pedidos.reduce((sum, p) => sum + Number(p.total), 0);
     const fecha = new Date().toLocaleDateString('es-BO');
 
-    // Filas de la tabla
-    const filas = pedidos.map(p => [
-      { text: String(p.id), fontSize: 11 },
-      { text: p.cliente?.nombre ?? 'Sin cliente', fontSize: 11 },
-      { text: `Bs. ${Number(p.total).toFixed(2)}`, fontSize: 11 },
-      { text: p.estado, fontSize: 11 },
-      { text: new Date(p.fecha).toLocaleDateString('es-BO'), fontSize: 11 },
+    // Filas de datos
+    const filas: any[] = pedidos.map(p => [
+      String(p.id),
+      p.cliente?.nombre ?? 'Sin cliente',
+      `Bs. ${Number(p.total).toFixed(2)}`,
+      p.estado,
+      new Date(p.fecha).toLocaleDateString('es-BO'),
     ]);
 
-    const docDefinition: TDocumentDefinitions = {
+    const bodyData: any[] =
+      filas.length > 0
+        ? filas
+        : [
+            [
+              { text: 'Sin pedidos registrados', colSpan: 5, alignment: 'center', color: '#888888' },
+              '', '', '', '',
+            ],
+          ];
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pdfMake = require('pdfmake/build/pdfmake');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const vfsFonts = require('pdfmake/build/vfs_fonts');
+    pdfMake.vfs = vfsFonts.vfs;
+
+    const docDefinition: any = {
       pageSize: 'A4',
       pageMargins: [40, 60, 40, 60],
       content: [
         {
           text: 'SweetAdmin — Reporte de Ventas',
-          style: 'header',
+          fontSize: 20,
+          bold: true,
+          color: '#1F4E79',
           alignment: 'center',
           margin: [0, 0, 0, 4],
         },
@@ -74,18 +80,14 @@ export class ReportesService {
             headerRows: 1,
             widths: [40, '*', 90, 90, 80],
             body: [
-              // Cabecera
               [
-                { text: 'ID', style: 'tableHeader' },
-                { text: 'Cliente', style: 'tableHeader' },
-                { text: 'Total (Bs.)', style: 'tableHeader' },
-                { text: 'Estado', style: 'tableHeader' },
-                { text: 'Fecha', style: 'tableHeader' },
+                { text: 'ID', bold: true, color: 'white', fillColor: '#1F4E79', fontSize: 12 },
+                { text: 'Cliente', bold: true, color: 'white', fillColor: '#1F4E79', fontSize: 12 },
+                { text: 'Total (Bs.)', bold: true, color: 'white', fillColor: '#1F4E79', fontSize: 12 },
+                { text: 'Estado', bold: true, color: 'white', fillColor: '#1F4E79', fontSize: 12 },
+                { text: 'Fecha', bold: true, color: 'white', fillColor: '#1F4E79', fontSize: 12 },
               ],
-              // Datos o mensaje vacío
-              ...(filas.length > 0
-                ? filas
-                : [[{ text: 'Sin pedidos registrados', colSpan: 5, alignment: 'center', color: '#888888', fontSize: 11 }, '', '', '', '']]),
+              ...bodyData,
             ],
           },
           layout: {
@@ -107,32 +109,11 @@ export class ReportesService {
           margin: [0, 16, 0, 0],
         },
       ],
-      styles: {
-        header: {
-          fontSize: 20,
-          bold: true,
-          color: '#1F4E79',
-        },
-        tableHeader: {
-          bold: true,
-          fontSize: 12,
-          color: 'white',
-          fillColor: '#1F4E79',
-          margin: [0, 4, 0, 4],
-        },
-      },
     };
 
     return new Promise((resolve, reject) => {
       try {
-        // Usar VFS fonts embebidas de pdfmake
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const pdfMakePrinter = require('pdfmake/build/pdfmake');
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const vfsFonts = require('pdfmake/build/vfs_fonts');
-        pdfMakePrinter.vfs = vfsFonts.vfs;
-
-        const pdfDoc = pdfMakePrinter.createPdf(docDefinition);
+        const pdfDoc = pdfMake.createPdf(docDefinition);
         pdfDoc.getBuffer((buffer: Buffer) => {
           resolve(buffer);
         });
