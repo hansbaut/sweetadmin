@@ -3,6 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pedido } from '../pedidos/pedido.entity';
 import { Producto } from '../productos/producto.entity';
+import PdfPrinter from 'pdfmake';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
+
+// Fuentes base incluidas en pdfmake (no requieren archivos externos)
+const fonts = {
+  Roboto: {
+    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
+    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
+    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
+    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
+  },
+};
 
 @Injectable()
 export class ReportesService {
@@ -24,60 +36,110 @@ export class ReportesService {
     const totalGeneral = pedidos.reduce((sum, p) => sum + Number(p.total), 0);
     const fecha = new Date().toLocaleDateString('es-BO');
 
-    const filas = pedidos.map(p => `
-      <tr>
-        <td>${p.id}</td>
-        <td>${p.cliente?.nombre ?? 'Sin cliente'}</td>
-        <td>Bs. ${Number(p.total).toFixed(2)}</td>
-        <td>${p.estado}</td>
-        <td>${new Date(p.fecha).toLocaleDateString('es-BO')}</td>
-      </tr>
-    `).join('');
+    // Filas de la tabla
+    const filas = pedidos.map(p => [
+      { text: String(p.id), fontSize: 11 },
+      { text: p.cliente?.nombre ?? 'Sin cliente', fontSize: 11 },
+      { text: `Bs. ${Number(p.total).toFixed(2)}`, fontSize: 11 },
+      { text: p.estado, fontSize: 11 },
+      { text: new Date(p.fecha).toLocaleDateString('es-BO'), fontSize: 11 },
+    ]);
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-          h1 { color: #1F4E79; text-align: center; margin-bottom: 4px; }
-          p { text-align: center; color: #888; margin: 4px 0; }
-          table { width: 100%; border-collapse: collapse; margin-top: 24px; }
-          th { background: #1F4E79; color: white; padding: 10px 8px; text-align: left; font-size: 13px; }
-          td { padding: 8px; border-bottom: 1px solid #eee; font-size: 12px; }
-          tr:nth-child(even) { background: #f5f5f5; }
-          .total { text-align: right; margin-top: 16px; font-size: 15px; font-weight: bold; color: #1F4E79; }
-        </style>
-      </head>
-      <body>
-        <h1>SweetAdmin — Reporte de Ventas</h1>
-        <p>Panadería y Pastelería</p>
-        <p>Generado: ${fecha}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th><th>Cliente</th><th>Total (Bs.)</th><th>Estado</th><th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>${filas || '<tr><td colspan="5" style="text-align:center;color:#888;">Sin pedidos registrados</td></tr>'}</tbody>
-        </table>
-        <p class="total">Total General: Bs. ${totalGeneral.toFixed(2)}</p>
-      </body>
-      </html>
-    `;
+    const docDefinition: TDocumentDefinitions = {
+      pageSize: 'A4',
+      pageMargins: [40, 60, 40, 60],
+      content: [
+        {
+          text: 'SweetAdmin — Reporte de Ventas',
+          style: 'header',
+          alignment: 'center',
+          margin: [0, 0, 0, 4],
+        },
+        {
+          text: 'Panadería y Pastelería',
+          alignment: 'center',
+          color: '#888888',
+          fontSize: 11,
+          margin: [0, 0, 0, 2],
+        },
+        {
+          text: `Generado: ${fecha}`,
+          alignment: 'center',
+          color: '#888888',
+          fontSize: 10,
+          margin: [0, 0, 0, 20],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: [40, '*', 90, 90, 80],
+            body: [
+              // Cabecera
+              [
+                { text: 'ID', style: 'tableHeader' },
+                { text: 'Cliente', style: 'tableHeader' },
+                { text: 'Total (Bs.)', style: 'tableHeader' },
+                { text: 'Estado', style: 'tableHeader' },
+                { text: 'Fecha', style: 'tableHeader' },
+              ],
+              // Datos o mensaje vacío
+              ...(filas.length > 0
+                ? filas
+                : [[{ text: 'Sin pedidos registrados', colSpan: 5, alignment: 'center', color: '#888888', fontSize: 11 }, '', '', '', '']]),
+            ],
+          },
+          layout: {
+            fillColor: (rowIndex: number) => {
+              if (rowIndex === 0) return '#1F4E79';
+              return rowIndex % 2 === 0 ? '#F5F5F5' : null;
+            },
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#EEEEEE',
+          },
+        },
+        {
+          text: `Total General: Bs. ${totalGeneral.toFixed(2)}`,
+          alignment: 'right',
+          bold: true,
+          fontSize: 14,
+          color: '#1F4E79',
+          margin: [0, 16, 0, 0],
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 20,
+          bold: true,
+          color: '#1F4E79',
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 12,
+          color: 'white',
+          fillColor: '#1F4E79',
+          margin: [0, 4, 0, 4],
+        },
+      },
+    };
 
-    const puppeteer = require('puppeteer');
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    return new Promise((resolve, reject) => {
+      try {
+        // Usar VFS fonts embebidas de pdfmake
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const pdfMakePrinter = require('pdfmake/build/pdfmake');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const vfsFonts = require('pdfmake/build/vfs_fonts');
+        pdfMakePrinter.vfs = vfsFonts.vfs;
+
+        const pdfDoc = pdfMakePrinter.createPdf(docDefinition);
+        pdfDoc.getBuffer((buffer: Buffer) => {
+          resolve(buffer);
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
-
-    return Buffer.from(pdfBuffer);
   }
 
   async obtenerEstadisticas() {
