@@ -42,11 +42,15 @@ export class ReportesController {
     res.end(buffer);
   }
 
-  // GET /reportes/productos-vendidos/pdf
-  // Ranking de productos mas vendidos
+  // GET /reportes/productos-vendidos/pdf?periodo=hoy|semana|mes|rango&desde=&hasta=
   @Get('productos-vendidos/pdf')
-  async reporteProductosVendidos(@Res() res: any) {
-    const buffer = await this.reportesService.generarReporteProductosVendidos();
+  async reporteProductosVendidos(
+    @Res() res: any,
+    @Query('periodo') periodo?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    const buffer = await this.reportesService.generarReporteProductosVendidos(periodo, desde, hasta);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename="reporte-productos-vendidos.pdf"',
